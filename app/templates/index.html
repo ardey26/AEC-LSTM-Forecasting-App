@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="p-8 flex flex-col">
+        <h1 class="text-4xl"> Angeles Electric Corporation Generation Charge </h1>
+        <div>
+        <div class="flex flex-col gap-4 items-center justify-center content-center">
+            <div class="grid md:grid-cols-3 gap-4 mt-8">
+                <div class="flex flex-col rounded-2xl bg-blue-400 text-blue-50 py-2 px-3">
+                    <div class="text-xl">
+                    Current Monthly Generation Charge <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div class="text-3xl flex">
+                        {{'%0.2f'| format(current_generation|float)}} <span class="text-xl mt-1 ml-4"> P/kWh </span> 
+                    </div>
+                </div>
+                <div class="flex flex-col rounded-2xl bg-indigo-500 text-blue-50 py-2 px-3">
+                    <div class="text-xl">
+                    Anticipated Generation For {% if current_selected == 1 %} Next Month {% else %} The Next {{ current_selected }} Months {% endif %} <i class="fa-solid fa-plug"></i>
+                    </div>
+                    <div class="text-3xl flex">                                                
+                        
+                        {% if prediction %} {{'%0.2f'| format(prediction|float)}}  <span class="text-xl mt-1 ml-4"> P/kWh </span> {% else %} <span class="text-sm mt-2 italic"> No predictions made yet </span> {% endif %} 
+                    </div>
+                </div>
+                <div class="rounded-2xl bg-red-400 text-blue-50 py-2 px-3 relative" x-data="{showErrorTooltip: false}"  @mouseover.away="showErrorTooltip = false" x-on:mouseenter="showErrorTooltip = true">
+                    <div class="flex flex-col">
+                        <div class="text-xl">
+                        Average Forecast Error <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div class="text-3xl flex">                        
+                            {% if accuracy %} {{'%0.2f'| format(accuracy|float)}}% {% else %} <span class="text-sm mt-2 italic"> No predictions made yet </span> {% endif %}
+                        </div>
+                    </div>
+                    {% if prediction %}
+                    <div class="absolute left-80 -top-20  w-[300px]" x-show="showErrorTooltip" x-cloak x-transition>
+                        <div class="bg-gray-400 rounded-lg  p-4">
+                            <i class="fa-solid fa-circle-info mr-2"> </i>The error percentage is calculated by finding the sum of the differences between the actual output from the dataset and the model's prediction during its training. In turn, the mean is calculated from the sum by dividing the sum by the number of total observations.
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+            </div>
+            <div class="grid md:grid-cols-6 gap-4 w-full">
+                <div class="flex col-span-4 flex-col gap-4 px-1 md:px-auto">
+                    <div class="bg-white border border-gray-300 rounded-xl h-64">
+                        <div class="text-3xl inline-block ml-8 mt-4">
+                            Monthly Mean Maximum Temperature
+                        </div>
+                        <div class="inline-block w-full h-4/5 px-8 pb-8">
+                                <canvas id="temps-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-300 rounded-xl h-64">
+                        <div class="text-3xl inline-block ml-8 mt-4">
+                            Monthly Generation Charge
+                        </div>
+                        <div class="inline-block w-full h-4/5 px-8 pb-8">
+                                <canvas id="gen-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                    <form method="GET" action="/predict" class="bg-white col-span-2 border border-gray-300 rounded-xl h-full flex flex-col p-8 ">
+                        <div class="text-2xl">
+                            Predict Generation Charge for the next:
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <i class="fa-solid fa-calendar text-5xl"></i> 
+                            <div class="flex flex-col items-start text-xl mt-2 w-full">
+                                <label for="months"> Month/s </label>
+                                <select class="self-start w-full text-2xl font-bold" id="months" name="months">
+                                {% for i in range(1, 13) %}                                     
+                                        <option value="{{ i }}" {% if current_selected == i %} selected  {% endif %}> {{ i }} </option>                                    
+                                    
+                                {% endfor %} 
+                                </select>
+                                
+                                
+                            </div>
+                        </div>
+                        
+                    
+                        <div class="text-2xl mt-8">
+                            Starting Date (optional):
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <i class="fa-solid fa-calendar mt-3 text-5xl"></i> 
+                            <div class="flex flex-col items-start text-xl mt-2 w-full">
+                                <label for="months"> Date </label>
+                                
+                                <select class="self-start w-full text-2xl font-bold" id="from" name="from">
+                                    
+                                {% for date in dates %} 
+                                    <option value="{{ date }}" {% if from_date == date %} selected {% endif %}> {{ date }} </option>                                    
+                                {% endfor %} 
+                                </select>
+                                
+                                
+                            </div>
+                        </div>
+                        <div>
+                            <button type="submit" class="border border-solid rounded-lg mt-8 w-full bg-indigo-400 hover:bg-white hover:text-indigo-500 hover:border-indigo-500 transition-colors duration-200 text-white font-bold mx-auto p-4 flex-shrink-0"> Forecast </button>
+                            {% if prediction %}
+                            <a href="#" class=""> 
+                                <div class="border border-solid rounded-lg mt-8 w-full bg-indigo-400 hover:bg-white text-center hover:text-indigo-500 hover:border-indigo-500 transition-colors duration-200 text-white font-bold mx-auto p-4 flex-shrink-0">
+                                    Print 
+                                </div>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                
+                
+        </div>
+        </div>
+    </div>
+
+
+</div>
+
+{% endblock %}
+
+{% block extrajs %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const temps_chart = document.getElementById('temps-chart');
+    const gen_chart = document.getElementById('gen-chart');
+
+    const labels = {{ dates | tojson }}
+
+    temps = {{ temps | tojson }}
+    gen = {{ gen | tojson }}
+
+    const temp_data = {
+    labels: labels,
+    datasets: [{
+        label: "Temperature (°C)",
+        data:  {{ temps | tojson }},
+        fill: false,
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1
+    }]
+    };
+    const gen_data = {
+    labels: labels,
+    datasets: [{
+        label: "Generation Charge (Php/kWh)",
+        data:  gen,
+        fill: false,
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1
+    }]
+    };
+    
+    new Chart(temps_chart, {
+      type: 'line',
+      data: temp_data,
+      options: {
+        maintainAspectRatio: false, 
+        responsive: true, 
+        tooltip : {
+            trigger: 'axis'
+        },
+    }
+    });
+
+    
+    new Chart(gen_chart, {
+      type: 'line',
+      data: gen_data,
+      options: {
+        maintainAspectRatio: false, 
+        responsive: true, 
+    }
+    });
+    
+  </script>
+   
+{% endblock %}
